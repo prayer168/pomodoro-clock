@@ -173,6 +173,45 @@ npm run lint      # ESLint（零警告政策）
 
 ---
 
+## 功能迭代紀錄
+
+### v1.1 — 全螢幕鎖定模式（commit `00bb6b7`）
+
+**需求：**
+1. 番茄鐘可全螢幕化，滑鼠移動或鍵盤動作不會關閉全螢幕
+2. 計時中途若要中斷，必須輸入 `rainpray` 才能解鎖
+
+**新增 / 修改的檔案：**
+
+| 檔案 | 異動 |
+|------|------|
+| `src/components/ScreenLock/ScreenLock.tsx` | 新增：全螢幕鎖定覆蓋層元件 |
+| `src/components/Timer/TimerDisplay.tsx` | 新增 `onLock` prop，底部加入「🔒 鎖定」按鈕 |
+| `src/pages/Home.tsx` | 新增 `isLocked` 狀態、`handleLock` / `handleUnlock`，渲染 `<ScreenLock>` |
+| `tailwind.config.js` | 新增 `shake` / `pulse-slow` 動畫 keyframes |
+
+**ScreenLock 元件設計重點：**
+- `fixed inset-0 z-50` 覆蓋整個視窗，`cursor-none` 隱藏游標
+- `document.documentElement.requestFullscreen()` 進入全螢幕
+- 鍵盤事件使用 `addEventListener('keydown', handler, true)`（`capture: true`）在捕獲階段攔截，防止底層 UI 響應
+- 監聽 `fullscreenchange`：若使用者按 Escape 退出全螢幕，自動重新請求（瀏覽器安全限制無法 `preventDefault` Escape，但可在事件回調中重新呼叫）
+- 滑鼠事件：`onClick` / `onMouseMove` 皆 `stopPropagation()`，不觸發底層
+
+**密碼輸入邏輯：**
+```
+typed buffer + 新按鍵
+  → 若等於 'rainpray' → onUnlock()
+  → 若是正確前綴     → 累加至 buffer，點亮對應圓點
+  → 若不是前綴       → shake 動畫 + 清空 buffer
+```
+- 4 秒無動作後淡入「輸入密碼解鎖」提示文字
+- 輸入錯誤：鎖頭圖示變紅 + 圓點抖動動畫（`animate-shake`）
+
+**循環依賴解法（延續 v1.0 的 soundRef 模式）：**
+`Home.tsx` 中 `handleComplete` 需要音效設定，但 `useTimer` 的 `onComplete` 又需要 `handleComplete`。用 `useRef` 儲存最新音效設定，`useEffect` 同步，避免 `const timer` 宣告前使用的 TypeScript 錯誤。
+
+---
+
 ## 已知限制與後續可擴充
 
 - [ ] Google OAuth 尚未設定（需 Google Cloud Console）
