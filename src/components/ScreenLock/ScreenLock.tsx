@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { TimerMode, TimerStatus } from '../../types'
-import { TimerRing } from '../Timer/TimerRing'
 
 interface ScreenLockProps {
   mode: TimerMode
@@ -18,18 +17,26 @@ const modeLabel: Record<TimerMode, string> = {
   long:  '長休中',
 }
 
-export function ScreenLock({ mode, status, timeLeft, progress, onUnlock }: ScreenLockProps) {
-  const [typed, setTyped]     = useState('')
-  const [shake, setShake]     = useState(false)
+const shimmerClass: Record<TimerMode, string> = {
+  focus: 'shimmer-text shimmer-focus',
+  short: 'shimmer-text shimmer-short',
+  long:  'shimmer-text shimmer-long',
+}
+
+function formatTime(seconds: number) {
+  const m = Math.floor(seconds / 60).toString().padStart(2, '0')
+  const s = (seconds % 60).toString().padStart(2, '0')
+  return `${m}:${s}`
+}
+
+export function ScreenLock({ mode, status, timeLeft, onUnlock }: ScreenLockProps) {
+  const [typed, setTyped]       = useState('')
+  const [shake, setShake]       = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [wrongFlash, setWrongFlash] = useState(false)
   const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Show hint text after 4 s of inactivity
-  useEffect(() => {
-    hintTimerRef.current = setTimeout(() => setShowHint(true), 4000)
-    return () => { if (hintTimerRef.current) clearTimeout(hintTimerRef.current) }
-  }, [])
+  const isRunning = status === 'running'
 
   const resetHintTimer = () => {
     setShowHint(false)
@@ -37,12 +44,13 @@ export function ScreenLock({ mode, status, timeLeft, progress, onUnlock }: Scree
     hintTimerRef.current = setTimeout(() => setShowHint(true), 4000)
   }
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Block all keys from reaching anything else
-    e.stopPropagation()
-    // Don't call preventDefault on Escape — browser forces fullscreen exit,
-    // but our overlay will still be visible and require the password.
+  useEffect(() => {
+    hintTimerRef.current = setTimeout(() => setShowHint(true), 4000)
+    return () => { if (hintTimerRef.current) clearTimeout(hintTimerRef.current) }
+  }, [])
 
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    e.stopPropagation()
     const key = e.key.toLowerCase()
     if (key.length !== 1 || !/[a-z]/.test(key)) return
 
@@ -50,15 +58,9 @@ export function ScreenLock({ mode, status, timeLeft, progress, onUnlock }: Scree
 
     setTyped(prev => {
       const next = prev + key
-
-      if (next === PASSWORD) {
-        onUnlock()
-        return ''
-      }
-
+      if (next === PASSWORD) { onUnlock(); return '' }
       if (PASSWORD.startsWith(next)) return next
 
-      // Wrong input — shake and reset
       setWrongFlash(true)
       setShake(true)
       setTimeout(() => { setShake(false); setWrongFlash(false) }, 450)
@@ -67,12 +69,11 @@ export function ScreenLock({ mode, status, timeLeft, progress, onUnlock }: Scree
   }, [onUnlock]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    // capture: true — intercept before any other handler
     document.addEventListener('keydown', handleKeyDown, true)
     return () => document.removeEventListener('keydown', handleKeyDown, true)
   }, [handleKeyDown])
 
-  // Try to re-enter fullscreen if user escaped it while still locked
+  // Re-enter fullscreen if user pressed Escape
   useEffect(() => {
     const onFsChange = () => {
       if (!document.fullscreenElement) {
@@ -83,52 +84,57 @@ export function ScreenLock({ mode, status, timeLeft, progress, onUnlock }: Scree
     return () => document.removeEventListener('fullscreenchange', onFsChange)
   }, [])
 
-  const isRunning = status === 'running'
-
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center select-none cursor-none"
+      className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center gap-6 select-none cursor-none overflow-hidden"
       onClick={e => e.stopPropagation()}
       onMouseMove={e => e.stopPropagation()}
     >
-      {/* Mode badge */}
-      <div className={`text-xs font-semibold uppercase tracking-[0.2em] mb-8 ${
-        mode === 'focus' ? 'text-red-500'
-        : mode === 'short' ? 'text-green-500'
-        : 'text-blue-500'
-      }`}>
+      {/* Acorn image */}
+      <img
+        src="/acorn.png"
+        alt=""
+        draggable={false}
+        className="w-44 h-44 object-contain opacity-80"
+        style={{ filter: 'invert(1) brightness(0.55)' }}
+      />
+
+      {/* Large mode label with flowing light */}
+      <div
+        className={`font-bold leading-none tracking-tight ${shimmerClass[mode]}`}
+        style={{ fontSize: '160pt' }}
+      >
         {modeLabel[mode]}
-        {isRunning && <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-current animate-pulse-slow" />}
       </div>
 
-      {/* Timer ring */}
-      <TimerRing progress={progress} mode={mode} timeLeft={timeLeft} size={300} />
+      {/* Time — subtle, below the label */}
+      <div className="font-mono text-slate-600 text-2xl -mt-2">
+        {formatTime(timeLeft)}
+        {isRunning && (
+          <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-slate-600 animate-pulse align-middle" />
+        )}
+      </div>
 
-      {/* Lock section */}
-      <div className="mt-12 flex flex-col items-center gap-4">
-        {/* Lock icon */}
+      {/* Lock + password dots */}
+      <div className="flex flex-col items-center gap-3 mt-4">
         <svg
-          className={`w-7 h-7 transition-colors ${wrongFlash ? 'text-red-500' : 'text-slate-600'}`}
+          className={`w-6 h-6 transition-colors duration-150 ${wrongFlash ? 'text-red-500' : 'text-slate-700'}`}
           fill="currentColor" viewBox="0 0 24 24"
         >
           <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
         </svg>
 
-        {/* Password dots */}
         <div className={`flex gap-2.5 ${shake ? 'animate-shake' : ''}`}>
           {Array.from({ length: PASSWORD.length }).map((_, i) => (
             <span
               key={i}
               className={`w-2.5 h-2.5 rounded-full transition-all duration-100 ${
-                i < typed.length
-                  ? 'bg-white scale-110'
-                  : 'bg-slate-700'
+                i < typed.length ? 'bg-white scale-110' : 'bg-slate-800'
               }`}
             />
           ))}
         </div>
 
-        {/* Hint */}
         <p className={`text-xs text-slate-600 transition-opacity duration-700 ${showHint ? 'opacity-100' : 'opacity-0'}`}>
           輸入密碼解鎖
         </p>
