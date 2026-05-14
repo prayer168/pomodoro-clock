@@ -1,8 +1,8 @@
-# 蕃茄鐘 App 建立過程紀錄
+# 橡實鐘 App 建立過程紀錄
 
 ## 專案概述
 
-一個全端蕃茄鐘 Web App，支援登入、任務清單、歷史統計，部署於 Vercel。
+一個全端橡實鐘（Acorn Timer）Web App，支援登入、任務清單、歷史統計，部署於 Vercel。
 
 **線上網址：** https://pomodoro-clock-rm1at4znp-prayer168s-projects.vercel.app
 
@@ -101,7 +101,7 @@ create table public.pomodoro_sessions (
 
 ### 進度環（TimerRing.tsx）
 - SVG 圓形，使用 `stroke-dashoffset` 控制進度
-- 三種模式色系：專注紅 `#ef4444`、短休綠 `#22c55e`、長休藍 `#3b82f6`
+- 三種模式色系：專注藍 `#38bdf8`、短休綠 `#34d399`、長休紫 `#a78bfa`（v1.2 重設計後更新）
 
 ### 統計圖表（Stats.tsx）
 - 查詢近 14 天已完成的專注 session
@@ -209,6 +209,65 @@ typed buffer + 新按鍵
 
 **循環依賴解法（延續 v1.0 的 soundRef 模式）：**
 `Home.tsx` 中 `handleComplete` 需要音效設定，但 `useTimer` 的 `onComplete` 又需要 `handleComplete`。用 `useRef` 儲存最新音效設定，`useEffect` 同步，避免 `const timer` 宣告前使用的 TypeScript 錯誤。
+
+### v1.2 — 橡實鐘品牌重設計 + 科幻 HUD 風格（commit `c981d26`）
+
+**需求：**
+1. 品牌從「蕃茄鐘」改成「橡實鐘」，所有蕃茄元素換成橡實
+2. 整體介面改成科幻 HUD 科技感設計
+
+**設計決策（討論確認後）：**
+
+| 項目 | 決策 |
+|------|------|
+| 配色 | 隨模式變色：專注 `#38bdf8`（電藍）、短休 `#34d399`（翠綠）、長休 `#a78bfa`（紫羅蘭）|
+| 背景 | 深宇宙藍 `#020c1b` + 細格線（`bg-grid`） |
+| 字型 | Share Tech Mono（Google Font）|
+| 裝飾 | HUD 角落括號、掃描線動畫、左右浮動數據流文字 |
+| 圖示 | AcornIcon SVG 線條風格（手繪橡實輪廓） |
+
+**新增 / 修改的檔案：**
+
+| 檔案 | 異動 |
+|------|------|
+| `src/components/Icons/AcornIcon.tsx` | 新增：SVG 橡實線條圖示，取代所有蕃茄 emoji |
+| `tailwind.config.js` | 新增 space 色系、ringRotate / scanline / dataflow 動畫 |
+| `src/index.css` | Google Font import、`.bg-grid`、`.hud-corner`、`.glow-*`、`.shimmer-*` 更新 |
+| `index.html` | 標題改為「橡實鐘」 |
+| `src/components/Layout/Navbar.tsx` | 品牌名稱 + AcornIcon + font-mono HUD 風格 |
+| `src/pages/Login.tsx` | 完整重寫：HUD 角框、全大寫 font-mono、ACORN TIMER SYSTEM 副標 |
+| `src/pages/Stats.tsx` | HUD 角框卡片、font-mono 標題、AcornIcon 空狀態 |
+| `src/components/Tasks/TaskList.tsx` | 🍅 改 AcornIcon、`// TASK QUEUE` 標題、font-mono 統一 |
+| `src/components/Timer/TimerRing.tsx` | 完整重寫：60 刻度線、旋轉虛線環、SVG glow filter、發光尖端點 |
+| `src/components/Timer/TimerDisplay.tsx` | 完整重寫：HUD 角框、模式色按鈕、session 數據讀出列、圓點進度指示 |
+| `src/pages/Home.tsx` | 新增科幻底幕：掃描線覆層、環境光暈、左右數據流浮動文字（`z-0` 分層）|
+| `src/components/ScreenLock/ScreenLock.tsx` | 更新：space 背景 + HUD 角框 + 模式色密碼點 |
+
+**TimerRing 多層 SVG 設計：**
+```
+Layer 1: 60 tick marks（外圈刻度，每 5 格為大刻度）
+Layer 2: 旋轉虛線環（dashRingR，30s 無限旋轉）
+Layer 3: 進度軌道（暗色圓環底）
+Layer 4: 主進度弧線（SVG feGaussianBlur glow filter）
+Layer 5: 內圈虛線裝飾
+Layer 6: 發光尖端點（progress > 0.01 顯示，3 層同心圓）
+Center: 時間文字（font-weight:100, textShadow 模式色）
+```
+
+**HUD 角框 CSS 原理：**
+```css
+.hud-corner {
+  position: absolute; width: 14px; height: 14px;
+  border-style: solid; border-width: 0;
+}
+.hud-tl { top: 0; left: 0; border-top-width: 1.5px; border-left-width: 1.5px; }
+/* ... 其他三角 */
+```
+每個角框透過 inline style 傳入 `borderColor: ${color}40`，自動跟隨模式色。
+
+**Home.tsx 科幻底幕分層（z-index 架構）：**
+- `z-0`：掃描線覆層（`repeating-linear-gradient` 橫紋）、環境光暈（radial-gradient）、左右數據流文字
+- `z-10`：TimerDisplay、ActiveTask 標籤、TaskList（實際互動內容）
 
 ---
 
