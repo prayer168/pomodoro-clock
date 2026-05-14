@@ -8,6 +8,7 @@ import { useStats } from '../hooks/useStats'
 import { TimerDisplay } from '../components/Timer/TimerDisplay'
 import { TaskList } from '../components/Tasks/TaskList'
 import { SettingsModal } from '../components/Settings/SettingsModal'
+import { ScreenLock } from '../components/ScreenLock/ScreenLock'
 
 interface HomeProps {
   user: User
@@ -16,8 +17,8 @@ interface HomeProps {
 export function Home({ user }: HomeProps) {
   const [showSettings, setShowSettings] = useState(false)
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
+  const [isLocked, setIsLocked] = useState(false)
   const sessionStartRef = useRef<string>(new Date().toISOString())
-  // Keep sound settings in a ref to avoid circular dependency with useTimer
   const soundRef = useRef<{ sound: SoundType; volume: number }>({
     sound: DEFAULT_SETTINGS.sound,
     volume: DEFAULT_SETTINGS.volume,
@@ -38,7 +39,6 @@ export function Home({ user }: HomeProps) {
 
   const timer = useTimer({ onComplete: handleComplete })
 
-  // Sync sound settings ref whenever settings change
   useEffect(() => {
     soundRef.current = { sound: timer.settings.sound, volume: timer.settings.volume }
   }, [timer.settings.sound, timer.settings.volume])
@@ -47,6 +47,18 @@ export function Home({ user }: HomeProps) {
     sessionStartRef.current = new Date().toISOString()
     timer.start()
   }
+
+  const handleLock = useCallback(() => {
+    setIsLocked(true)
+    document.documentElement.requestFullscreen().catch(() => {})
+  }, [])
+
+  const handleUnlock = useCallback(() => {
+    setIsLocked(false)
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {})
+    }
+  }, [])
 
   return (
     <div className="flex flex-col items-center gap-10 py-10 px-4">
@@ -63,6 +75,7 @@ export function Home({ user }: HomeProps) {
         onReset={timer.reset}
         onSkip={timer.skip}
         onOpenSettings={() => setShowSettings(true)}
+        onLock={handleLock}
       />
 
       {activeTaskId && (
@@ -86,6 +99,16 @@ export function Home({ user }: HomeProps) {
           settings={timer.settings}
           onSave={timer.updateSettings}
           onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {isLocked && (
+        <ScreenLock
+          mode={timer.mode}
+          status={timer.status}
+          timeLeft={timer.timeLeft}
+          progress={timer.progress}
+          onUnlock={handleUnlock}
         />
       )}
     </div>
