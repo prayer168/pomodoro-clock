@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
-import { TimerMode } from '../types'
+import { TimerMode, SoundType, DEFAULT_SETTINGS } from '../types'
 import { useTimer } from '../hooks/useTimer'
 import { useSound } from '../hooks/useSound'
 import { useTasks } from '../hooks/useTasks'
@@ -17,21 +17,31 @@ export function Home({ user }: HomeProps) {
   const [showSettings, setShowSettings] = useState(false)
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
   const sessionStartRef = useRef<string>(new Date().toISOString())
+  // Keep sound settings in a ref to avoid circular dependency with useTimer
+  const soundRef = useRef<{ sound: SoundType; volume: number }>({
+    sound: DEFAULT_SETTINGS.sound,
+    volume: DEFAULT_SETTINGS.volume,
+  })
 
   const { play } = useSound()
   const { recordSession } = useStats(user.id)
   const { tasks, addTask, toggleTask, deleteTask, incrementPomodoro } = useTasks(user.id)
 
   const handleComplete = useCallback((mode: TimerMode) => {
-    play(timer.settings.sound, timer.settings.volume)
+    play(soundRef.current.sound, soundRef.current.volume)
     recordSession(mode, activeTaskId, sessionStartRef.current, true)
     if (mode === 'focus' && activeTaskId) {
       incrementPomodoro(activeTaskId)
     }
     sessionStartRef.current = new Date().toISOString()
-  }, [activeTaskId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTaskId, play, recordSession, incrementPomodoro])
 
   const timer = useTimer({ onComplete: handleComplete })
+
+  // Sync sound settings ref whenever settings change
+  useEffect(() => {
+    soundRef.current = { sound: timer.settings.sound, volume: timer.settings.volume }
+  }, [timer.settings.sound, timer.settings.volume])
 
   const handleStart = () => {
     sessionStartRef.current = new Date().toISOString()
@@ -55,7 +65,6 @@ export function Home({ user }: HomeProps) {
         onOpenSettings={() => setShowSettings(true)}
       />
 
-      {/* Active task indicator */}
       {activeTaskId && (
         <div className="flex items-center gap-2 text-sm text-slate-400 -mt-4">
           <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />

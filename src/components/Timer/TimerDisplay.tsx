@@ -32,8 +32,7 @@ export function TimerDisplay({
   mode, status, timeLeft, progress, focusCount,
   onSetMode, onStart, onPause, onReset, onSkip, onOpenSettings,
 }: TimerDisplayProps) {
-  const isRunning = status === 'running'
-  const isIdle    = status === 'idle'
+  const isRunning  = status === 'running'
   const isFinished = status === 'finished'
 
   return (
