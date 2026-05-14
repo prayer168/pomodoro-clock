@@ -17,6 +17,12 @@ const modeLabel: Record<TimerMode, string> = {
   long:  '長休中',
 }
 
+const modeColor: Record<TimerMode, string> = {
+  focus: '#38bdf8',
+  short: '#34d399',
+  long:  '#a78bfa',
+}
+
 const shimmerClass: Record<TimerMode, string> = {
   focus: 'shimmer-text shimmer-focus',
   short: 'shimmer-text shimmer-short',
@@ -37,6 +43,7 @@ export function ScreenLock({ mode, status, timeLeft, onUnlock }: ScreenLockProps
   const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const isRunning = status === 'running'
+  const color = modeColor[mode]
 
   const resetHintTimer = () => {
     setShowHint(false)
@@ -86,10 +93,18 @@ export function ScreenLock({ mode, status, timeLeft, onUnlock }: ScreenLockProps
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center gap-6 select-none cursor-none overflow-hidden"
+      className="fixed inset-0 z-50 bg-space bg-grid flex flex-col items-center justify-center gap-6 select-none cursor-none overflow-hidden"
       onClick={e => e.stopPropagation()}
       onMouseMove={e => e.stopPropagation()}
     >
+      {/* Ambient glow */}
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[140px]"
+        style={{ background: `radial-gradient(circle, ${color}08 0%, transparent 70%)` }} />
+      {/* HUD corners */}
+      <div className="hud-corner hud-tl" style={{ borderColor: `${color}30`, width: 60, height: 60 }} />
+      <div className="hud-corner hud-tr" style={{ borderColor: `${color}30`, width: 60, height: 60 }} />
+      <div className="hud-corner hud-bl" style={{ borderColor: `${color}30`, width: 60, height: 60 }} />
+      <div className="hud-corner hud-br" style={{ borderColor: `${color}30`, width: 60, height: 60 }} />
       {/* Large mode label with flowing light */}
       <div
         className={`font-bold leading-none tracking-tight ${shimmerClass[mode]}`}
@@ -112,7 +127,8 @@ export function ScreenLock({ mode, status, timeLeft, onUnlock }: ScreenLockProps
       {/* Lock + password dots */}
       <div className="flex flex-col items-center gap-3 mt-4">
         <svg
-          className={`w-6 h-6 transition-colors duration-150 ${wrongFlash ? 'text-red-500' : 'text-slate-700'}`}
+          className="w-6 h-6 transition-colors duration-150"
+          style={{ color: wrongFlash ? '#f87171' : `${color}50` }}
           fill="currentColor" viewBox="0 0 24 24"
         >
           <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
@@ -122,9 +138,12 @@ export function ScreenLock({ mode, status, timeLeft, onUnlock }: ScreenLockProps
           {Array.from({ length: PASSWORD.length }).map((_, i) => (
             <span
               key={i}
-              className={`w-2.5 h-2.5 rounded-full transition-all duration-100 ${
-                i < typed.length ? 'bg-white scale-110' : 'bg-slate-800'
-              }`}
+              className="w-2.5 h-2.5 rounded-full transition-all duration-100"
+              style={{
+                background: i < typed.length ? color : '#0f2040',
+                boxShadow: i < typed.length ? `0 0 6px ${color}` : 'none',
+                transform: i < typed.length ? 'scale(1.15)' : 'scale(1)',
+              }}
             />
           ))}
         </div>

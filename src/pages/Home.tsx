@@ -61,38 +61,66 @@ export function Home({ user }: HomeProps) {
   }, [])
 
   return (
-    <div className="flex flex-col items-center gap-10 py-10 px-4">
-      <TimerDisplay
-        mode={timer.mode}
-        status={timer.status}
-        timeLeft={timer.timeLeft}
-        totalTime={timer.totalTime}
-        progress={timer.progress}
-        focusCount={timer.focusCount}
-        onSetMode={timer.setMode}
-        onStart={handleStart}
-        onPause={timer.pause}
-        onReset={timer.reset}
-        onSkip={timer.skip}
-        onOpenSettings={() => setShowSettings(true)}
-        onLock={handleLock}
-      />
+    <div className="relative flex flex-col items-center gap-10 py-10 px-4 overflow-hidden">
+      {/* Scan line overlay */}
+      <div className="pointer-events-none fixed inset-0 z-0"
+        style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)', animation: 'scanline 6s linear infinite' }} />
+
+      {/* Ambient glow blob */}
+      <div className="pointer-events-none fixed top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full blur-[120px] z-0"
+        style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.04) 0%, transparent 70%)' }} />
+
+      {/* Floating data-flow text (left) */}
+      <div className="pointer-events-none fixed left-4 top-0 z-0 flex flex-col gap-6 opacity-[0.06] font-mono text-[10px] text-sky-400 tracking-widest"
+        style={{ animation: 'dataflow 14s linear infinite' }}>
+        {['01001010','SYS::OK','T+0042','FOCUS','ACQ','SYNC','0xF4C2','READY','10110100','MODE::A'].map((s, i) => (
+          <span key={i}>{s}</span>
+        ))}
+      </div>
+
+      {/* Floating data-flow text (right) */}
+      <div className="pointer-events-none fixed right-4 top-0 z-0 flex flex-col gap-6 opacity-[0.06] font-mono text-[10px] text-sky-400 tracking-widest"
+        style={{ animation: 'dataflow 18s linear infinite reverse' }}>
+        {['ACORN','0xFF','TIMER','11001','PWR::ON','LOCK','0xA3B1','IDLE','SESSION','0b1010'].map((s, i) => (
+          <span key={i}>{s}</span>
+        ))}
+      </div>
+
+      <div className="relative z-10">
+        <TimerDisplay
+          mode={timer.mode}
+          status={timer.status}
+          timeLeft={timer.timeLeft}
+          totalTime={timer.totalTime}
+          progress={timer.progress}
+          focusCount={timer.focusCount}
+          onSetMode={timer.setMode}
+          onStart={handleStart}
+          onPause={timer.pause}
+          onReset={timer.reset}
+          onSkip={timer.skip}
+          onOpenSettings={() => setShowSettings(true)}
+          onLock={handleLock}
+        />
+      </div>
 
       {activeTaskId && (
-        <div className="flex items-center gap-2 text-sm text-slate-400 -mt-4">
-          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+        <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-slate-400 -mt-4 relative z-10">
+          <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
           <span>{tasks.find(t => t.id === activeTaskId)?.title}</span>
         </div>
       )}
 
-      <TaskList
-        tasks={tasks}
-        activeTaskId={activeTaskId}
-        onAdd={addTask}
-        onToggle={toggleTask}
-        onDelete={deleteTask}
-        onSelect={setActiveTaskId}
-      />
+      <div className="relative z-10 w-full flex justify-center">
+        <TaskList
+          tasks={tasks}
+          activeTaskId={activeTaskId}
+          onAdd={addTask}
+          onToggle={toggleTask}
+          onDelete={deleteTask}
+          onSelect={setActiveTaskId}
+        />
+      </div>
 
       {showSettings && (
         <SettingsModal

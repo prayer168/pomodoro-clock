@@ -1,17 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   html {
-    @apply bg-slate-950 text-white;
+    background-color: #020c1b;
+    color: #e2e8f0;
     font-family: system-ui, -apple-system, sans-serif;
   }
-  * {
-    @apply box-border;
-  }
+  * { box-sizing: border-box; }
 }
 
+/* ── Sci-fi grid background ── */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* ── Shimmer text for ScreenLock ── */
 @keyframes shimmer {
   0%   { background-position: 200% center; }
   100% { background-position: -200% center; }
@@ -25,41 +35,26 @@
   animation: shimmer 3s linear infinite;
 }
 
-.shimmer-focus {
-  background-image: linear-gradient(
-    90deg,
-    #ef4444 0%,
-    #ef4444 25%,
-    #fca5a5 40%,
-    #ffffff 50%,
-    #fca5a5 60%,
-    #ef4444 75%,
-    #ef4444 100%
-  );
-}
+.shimmer-focus { background-image: linear-gradient(90deg, #38bdf8 0%, #38bdf8 25%, #bae6fd 40%, #ffffff 50%, #bae6fd 60%, #38bdf8 75%, #38bdf8 100%); }
+.shimmer-short { background-image: linear-gradient(90deg, #34d399 0%, #34d399 25%, #a7f3d0 40%, #ffffff 50%, #a7f3d0 60%, #34d399 75%, #34d399 100%); }
+.shimmer-long  { background-image: linear-gradient(90deg, #a78bfa 0%, #a78bfa 25%, #ddd6fe 40%, #ffffff 50%, #ddd6fe 60%, #a78bfa 75%, #a78bfa 100%); }
 
-.shimmer-short {
-  background-image: linear-gradient(
-    90deg,
-    #22c55e 0%,
-    #22c55e 25%,
-    #86efac 40%,
-    #ffffff 50%,
-    #86efac 60%,
-    #22c55e 75%,
-    #22c55e 100%
-  );
+/* ── HUD corner brackets ── */
+.hud-corner {
+  position: absolute;
+  width: 18px;
+  height: 18px;
 }
+.hud-tl { top: 0;    left: 0;  border-top: 1px solid; border-left: 1px solid; }
+.hud-tr { top: 0;    right: 0; border-top: 1px solid; border-right: 1px solid; }
+.hud-bl { bottom: 0; left: 0;  border-bottom: 1px solid; border-left: 1px solid; }
+.hud-br { bottom: 0; right: 0; border-bottom: 1px solid; border-right: 1px solid; }
 
-.shimmer-long {
-  background-image: linear-gradient(
-    90deg,
-    #3b82f6 0%,
-    #3b82f6 25%,
-    #93c5fd 40%,
-    #ffffff 50%,
-    #93c5fd 60%,
-    #3b82f6 75%,
-    #3b82f6 100%
-  );
-}
+/* ── Glow utilities ── */
+.glow-focus { box-shadow: 0 0 18px #38bdf830, 0 0 4px #38bdf820; }
+.glow-short { box-shadow: 0 0 18px #34d39930, 0 0 4px #34d39920; }
+.glow-long  { box-shadow: 0 0 18px #a78bfa30, 0 0 4px #a78bfa20; }
+
+.text-glow-focus { text-shadow: 0 0 12px #38bdf880; }
+.text-glow-short { text-shadow: 0 0 12px #34d39980; }
+.text-glow-long  { text-shadow: 0 0 12px #a78bfa80; }
