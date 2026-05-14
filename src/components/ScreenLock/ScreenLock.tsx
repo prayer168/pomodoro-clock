@@ -90,15 +90,6 @@ export function ScreenLock({ mode, status, timeLeft, onUnlock }: ScreenLockProps
       onClick={e => e.stopPropagation()}
       onMouseMove={e => e.stopPropagation()}
     >
-      {/* Acorn image */}
-      <img
-        src="/acorn.png"
-        alt=""
-        draggable={false}
-        className="w-44 h-44 object-contain opacity-80"
-        style={{ filter: 'invert(1) brightness(0.55)' }}
-      />
-
       {/* Large mode label with flowing light */}
       <div
         className={`font-bold leading-none tracking-tight ${shimmerClass[mode]}`}
@@ -107,11 +98,14 @@ export function ScreenLock({ mode, status, timeLeft, onUnlock }: ScreenLockProps
         {modeLabel[mode]}
       </div>
 
-      {/* Time — subtle, below the label */}
-      <div className="font-mono text-slate-600 text-2xl -mt-2">
+      {/* Time — same size, shimmer */}
+      <div
+        className={`font-mono font-bold leading-none ${shimmerClass[mode]}`}
+        style={{ fontSize: '160pt' }}
+      >
         {formatTime(timeLeft)}
         {isRunning && (
-          <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-slate-600 animate-pulse align-middle" />
+          <span className="inline-block w-3 h-3 rounded-full bg-current animate-pulse align-middle ml-2" />
         )}
       </div>
 
